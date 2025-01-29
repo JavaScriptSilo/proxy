@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html>
-  <head>
+<head>
     <title>Proxy</title>
-  </head>
-  <body>
-    <?php
+</head>
+<body>
+<?php
 /*
  * html2canvas-php-proxy 1.1.4
  *
@@ -13,17 +13,20 @@
  * Released under the MIT license
  */
 
-// Turn off errors because the script already own uses "error_get_last"
+// Enable error logging
+ini_set('log_errors', 'On');
+ini_set('error_log', 'path/to/error.log'); // Set your error log path
 ini_set('display_errors', 'Off');
+error_reporting(E_ALL);
 
 // Setup
 define('H2CP_PATH', 'cache');                   // Relative folder where the images are saved
-define('H2CP_PERMISSION', 0666);                // use 644 or 666 for remove execution for prevent sploits
+define('H2CP_PERMISSION', 0777);                // Ensure directory is writable
 define('H2CP_CACHE', 60 * 5 * 1000);            // Limit access-control and cache, define 0/false/null/-1 to prevent cache
 define('H2CP_TIMEOUT', 20);                     // Timeout from load Socket
 define('H2CP_MAX_LOOP', 10);                    // Configure loop limit for redirects (location header)
 define('H2CP_DATAURI', false);                  // Enable use of "data URI scheme"
-define('H2CP_PREFER_CURL', true);               // Enable curl if avaliable or disable
+define('H2CP_PREFER_CURL', true);               // Enable curl if available or disable
 define('H2CP_SECPREFIX', 'h2cp_');              // Prefix temp filename
 define('H2CP_ALLOWED_DOMAINS', '*');            // * allow all domains, *.site.com for sub-domains, or fixed domains use `define('H2CP_ALLOWED_DOMAINS', 'site.com,www.site.com' )
 define('H2CP_ALLOWED_PORTS', '80,443');         // Allowed ports
@@ -495,21 +498,36 @@ function curlDownloadSource($url, $toSource)
     curl_setopt($ch, CURLOPT_BINARYTRANSFER, true);
 
     if (isset($uri['user'])) {
+        curl_setopt($curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+        curl_setopt($ch, CURLOPT_CAINFO, H2CP_SSL_VERIFY_PEER);
+    } else {
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    }
+
+    curl_setopt($ch, CURLOPT_TIMEOUT, H2CP_TIMEOUT);
+    curl_setopt($ch, CURLOPT_URL, $currentUrl);
+    curl_setopt($ch, CURLOPT_HEADER, false);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_MAXREDIRS, H2CP_MAX_LOOP);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_BINARYTRANSFER, true);
+
+    if (isset($uri['user'])) {
         curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
         curl_setopt($ch, CURLOPT_USERPWD, $uri['user'] . ':' . (isset($uri['pass']) ? $uri['pass'] : ''));
     }
 
     $headers = array();
 
-    if (false === empty($_SERVER['HTTP_ACCEPT'])) {
+    if (!empty($_SERVER['HTTP_ACCEPT'])) {
         $headers[] = 'Accept: ' . $_SERVER['HTTP_ACCEPT'];
     }
 
-    if (false === empty($_SERVER['HTTP_USER_AGENT'])) {
+    if (!empty($_SERVER['HTTP_USER_AGENT'])) {
         $headers[] = 'User-Agent: ' . $_SERVER['HTTP_USER_AGENT'];
     }
 
-    if (false === empty($_SERVER['HTTP_REFERER'])) {
+    if (!empty($_SERVER['HTTP_REFERER'])) {
         $headers[] = 'Referer: ' . $_SERVER['HTTP_REFERER'];
     }
 
@@ -595,15 +613,15 @@ function downloadSource($url, $toSource, $caller)
             fwrite($fp, 'Authorization: Basic ' . $auth . H2CP_EOL);
         }
 
-        if (false === empty($_SERVER['HTTP_ACCEPT'])) {
+        if (!empty($_SERVER['HTTP_ACCEPT'])) {
             fwrite($fp, 'Accept: ' . $_SERVER['HTTP_ACCEPT'] . H2CP_EOL);
         }
 
-        if (false === empty($_SERVER['HTTP_USER_AGENT'])) {
+        if (!empty($_SERVER['HTTP_USER_AGENT'])) {
             fwrite($fp, 'User-Agent: ' . $_SERVER['HTTP_USER_AGENT'] . H2CP_EOL);
         }
 
-        if (false === empty($_SERVER['HTTP_REFERER'])) {
+        if (!empty($_SERVER['HTTP_REFERER'])) {
             fwrite($fp, 'Referer: ' . $_SERVER['HTTP_REFERER'] . H2CP_EOL);
         }
 
@@ -617,7 +635,7 @@ function downloadSource($url, $toSource, $caller)
         $mime = null;
         $data = '';
 
-        while (false === feof($fp)) {
+        while (!feof($fp)) {
             if (H2CP_MAX_EXEC !== 0 && (time() - H2CP_INIT_EXEC) >= H2CP_MAX_EXEC) {
                 return array('error' => 'Maximum execution time of ' . (H2CP_MAX_EXEC + 5) . ' seconds exceeded, configure this with ini_set/set_time_limit or "php.ini" (if safe_mode is enabled)');
             }
@@ -701,7 +719,7 @@ function downloadSource($url, $toSource, $caller)
             } elseif ($isRedirect) {
                 fclose($fp);
                 $data = '';
-                return array('error' => 'The response should be a redirect "' . $url . '", but did not inform which header "Localtion:"');
+                return array('error' => 'The response should be a redirect "' . $url . '", but did not inform which header "Location:"');
             } elseif ($mime === null) {
                 fclose($fp);
                 $data = '';
@@ -871,5 +889,6 @@ if ($callback === false) {
 echo $callback, '(',
     JsonEncodeString('error: html2canvas-proxy-php: ' . $response['error']),
 ');';
-  </body>
+?>
+</body>
 </html>
